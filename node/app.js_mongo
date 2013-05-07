@@ -1,0 +1,92 @@
+var express = require('express')
+  , https = require('https')
+  , path = require('path')
+  , io = require('socket.io')
+  , fs = require('fs')
+
+var options = {
+    key: fs.readFileSync('/etc/httpd/conf.d/private.key'), // 秘密鍵
+    cert: fs.readFileSync('/etc/httpd/conf.d/public.crt'), // 公開鍵
+};
+ 
+var app = express()
+  , server = require('https').createServer(options,app)
+  , io = io.listen(server);
+ 
+app.configure(function(){
+  app.set('port', process.env.PORT || 3000);
+  app.set('views', __dirname + '/views');
+  app.set('view engine', 'jade');
+  app.use(express.favicon());
+  app.use(express.logger('dev'));
+  app.use(express.bodyParser());
+  app.use(express.methodOverride());
+  app.use(app.router);
+  app.use(express.static(path.join(__dirname, 'public')));
+});
+ 
+app.configure('development', function(){
+  app.use(express.errorHandler());
+});
+
+ 
+server.listen(app.get('port'))
+
+// var mongoose = require('mongoose');
+// //localhostのnode_Game_demoのデータベースに接続。
+// var db = mongoose.connect('mongodb://localhost/db');
+// // メモのスキーマを宣言。
+// var GameSchema = new mongoose.Schema({
+//      pv_u_id:{type:Number},
+//      score:{type:Number},
+//      date:{type:Number}
+// });
+// // スキーマからモデルを生成。
+// var Game = db.model('things',GameSchema);
+// 
+// var res = Game.find(function(err,things){
+//     if(err){console.log(err);}
+//     console.log(things);
+//     //接続したユーザーにメモのデータを送る。
+// //     socket.emit('create',items);
+// });
+// var testsave = 11;
+// var memo_game = new Game({"pv_u_id":testsave});
+// //データベースに保存。
+// memo_game.save(function(err){
+//     if(err){ return; }
+// //     socket.broadcast.json.emit('create',[memo]);
+// //     socket.emit('create',[memo]);
+// });
+// // var res = memo_game.find();
+// // console.log(res);
+var guest = 0;
+
+chat = io.sockets.on('connection', function(client) {
+++guest;
+heya = Math.ceil((guest / 2));
+    client.emit('connected');
+
+    client.on('init', function(pv_u_id) {
+      var u_data = new Array();
+      u_data[0] = guest;  
+      u_data[1] = heya;  
+      u_data[2] = pv_u_id;  
+      client.join(guest);
+      chat.to(guest).emit('session', u_data);
+      client.leave(guest);
+      client.join(heya);
+      chat.to(heya).emit('msg', heya);
+    });
+
+    client.on('msg', function(data) {
+      console.log('guest ' + data[0]);
+      console.log('room ' + data[1]);
+      console.log('msg ' + data[2]);
+      if(data[3] == 2){
+        console.log('go to php ' + data);
+                
+      }
+      chat.to(data[1]).emit('msg', data);
+    });
+});

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>yatta</title>
+	</head>
+	<body>
+<div id="mymsg">
+  <input type="text"><button>send</button><br>
+</div>
+
+<div id="map" style="width: 600px; height: 400px;"></div>
+  <script src="/javascripts/jquery-1.7.1.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="text/javascript" src="https://maps.google.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript">
+var lati = 0;
+var longi = 0;
+
+var socket = io.connect('/');
+var score = 0;
+function getUrlVars()
+{
+  var vars = [], hash;
+  var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+  for(var i = 0; i <hashes.length; i++)
+  {
+    hash = hashes[i].split('=');
+    vars.push(hash[0]);
+    vars[hash[0]] = hash[1];
+  }
+  return vars;
+}
+
+var uri = getUrlVars();
+uri[0] = uri.lati;
+uri[1] = uri.longi;
+uri[2] = decodeURI(uri.msg);
+var Marker = new Object();
+
+var myMap = new google.maps.Map(document.getElementById('map'), {
+  zoom: 12,//地図縮尺
+  center: new google.maps.LatLng(uri[0], uri[1]),//地図の中心点
+  scrollwheel: false,
+  mapTypeId: google.maps.MapTypeId.ROADMAP
+});
+
+socket.on('connected', function() {
+  socket.json.emit('init',uri);
+});
+socket.on('show', function(data) {
+  show(data);
+});
+
+socket.on('add', function(data) {
+  Marker[data["place"]] = new google.maps.Marker({
+    position: new google.maps.LatLng(data["lati"], data["longi"]),
+  });
+  attachMessage(Marker[data["place"]], '<div id="'+data["place"]+'"><input type="text"></input><button class="send">send</button><br>'+data["msg"]+'<br></div>');
+  Marker[data["place"]].setMap(myMap);
+});
+
+socket.on('chat', function(data) {
+  $('#'+data[1]).append(data[0]+'<br>'); 
+});
+
+socket.on('del', function(room_id) {
+  if(Marker[room_id]){
+    Marker[room_id].setMap(null);
+  }
+});
+
+
+$("#mymsg button").click(function () {
+  uri[2] = $('#mymsg input').val();
+  socket.json.emit('add',uri);
+  $('#mymsg').empty();
+});
+
+$(document).on('click', '.send', function(){
+  var chat_data = new Array();
+  chat_data[0] = $(this).siblings('input').val(); 
+  chat_data[1] = $(this).parents('div').attr('id'); 
+  console.log($(this).siblings('input').val());
+  socket.json.emit('chat',chat_data);
+});
+
+function attachMessage(marker, msg) {
+  var ThreWindow = new google.maps.InfoWindow({
+    content: msg 
+  });
+  google.maps.event.addListener(marker, 'click', function(event) {
+    ThreWindow.open(myMap, marker);
+  });
+  ThreWindow.open(myMap, marker);
+}
+
+
+function show(map_data){
+  var obj = eval("("+map_data+")");
+  for (var i=0, size=obj.thread.length; i<size; ++i) {
+    Marker[obj.thread[i][3]] = new google.maps.Marker({
+      position: new google.maps.LatLng(obj.thread[i][0], obj.thread[i][1]),
+      map: myMap
+    });
+    attachMessage(Marker[obj.thread[i][3]], '<div id="'+obj.thread[i][3]+'"><input type="text"></input><button class="send">send</button><br>'+obj.thread[i][2]+'<br></div>');
+  }
+}
+
+</script>
+
+	</body>
+</html>
+
+<style type="text/css">
+
+.chat td{
+ width: 141px;
+ height: 141px;
+ text-align: center;
+--max-width: 136px;
+--max-height: 136px;
+ border-bottom: inset 1px black;
+ overflow: hidden;
+}
+</style>

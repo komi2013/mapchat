@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>title</title>
+</head>
+<body>
+    <h1>test</h1>
+    <h2>view</h2>
+    <div id="view">
+    </div>
+    <hr />
+    <h2>send</h2>
+    <form><input id="comment" type="text" value="" /> <input id="send" type="button" value="send" /></form>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+  <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.1.1/js/bootstrap.min.js"></script>
+  <script src="https://raw.github.com/carhartl/jquery-cookie/master/jquery.cookie.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+
+<script type="text/javascript">
+
+// alert(Math.random());
+guest = 1;
+heya = 1;
+var ssid = '123456';
+var room = '123456';
+// var guest = Math.random();
+// var room = 'room';
+// $.cookie("count", 1);
+$(function() {
+    $("#send").click(function () {
+        send(ssid);
+    });
+    chat(room, ssid);
+});
+</script>
+<script src="/javascripts/chat.js"></script>
+</body>
+</html>

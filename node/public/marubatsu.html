@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>Tic-tac-toe</title>
+    <meta name="viewport" content="width=device-width">
+	</head>
+	<body>
+
+<table border="2" class="marubatsu">
+<tr><td id="1">1</td><td id="2">2</td><td id="3">3</td></tr>
+<tr><td id="4">4</td><td id="5">5</td><td id="6">6</td></tr>
+<tr><td id="7">7</td><td id="8">8</td><td id="9">9</td></tr>
+</table>
+<div id="notice"></div>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+  <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.1.1/js/bootstrap.min.js"></script>
+  <script src="https://raw.github.com/carhartl/jquery-cookie/master/jquery.cookie.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+	</body>
+</html>
+<script type="text/javascript">
+
+var score_pass = location.search;
+var guest = 1;
+var heya = 1;
+var score = 1;
+var m_data = new Array();
+var s_data = new Array();
+s_data[2] = 1;
+
+$(function() {
+  $(".marubatsu td").click(function () {
+    console.log(guest+' and '+ s_data);
+    console.log('this id '+$(this).text());
+    s_data[3] = $(this).text();
+    if(guest % 2 == s_data[2] % 2){
+      send();
+    }
+  });
+  marubatsu();
+});
+
+</script>
+<script src="/javascripts/marubatsu.js"></script>
+
+<style type="text/css">
+
+.marubatsu{
+ text-align: center;
+}
+.marubatsu td{
+ width: 90px;
+ height: 90px;
+}
+</style>

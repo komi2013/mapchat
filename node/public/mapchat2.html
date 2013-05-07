@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>おはよう</title>
+	</head>
+	<body>
+<div id="list"></div>
+<a>test mongo db</a><br>
+<div id="map" style="width: 600px; height: 400px;"></div>
+  <script src="/javascripts/jquery-1.7.1.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="text/javascript" src="https://maps.google.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript">
+var lati = 0;
+var longi = 0;
+
+if (navigator.geolocation) {
+  // 現在の位置情報取得を実施
+  navigator.geolocation.getCurrentPosition(
+	// 位置情報取得成功時
+	function (pos) { 
+    lati = pos.coords.latitude;
+    longi = pos.coords.longitude;
+    $("#lati").val(lati);
+    $("#longi").val(longi);
+    
+// 	        document.getElementById("location").innerHTML = location;
+	},
+	// 位置情報取得失敗時
+	function (error) {
+		var message = "";
+
+		switch (error.code) {
+		   // 位置情報取得できない場合
+		   case error.POSITION_UNAVAILABLE:
+		       message = "位置情報の取得ができませんでした。";
+		       break;
+		  // Geolocation使用許可されない場合
+		  case error.PERMISSION_DENIED:
+		      message = "位置情報取得の使用許可がされませんでした。";
+		      break;
+		  // タイムアウトした場合 
+		  case error.PERMISSION_DENIED_TIMEOUT:
+		      message = "位置情報取得中にタイムアウトしました。";
+		      break;
+		}
+		window.alert(message);
+	});
+} else {
+	window.alert("本ブラウザではGeolocationが使えません");
+}
+
+var socket = io.connect('/');
+var score = 0;
+// function getUrlVars()
+// {
+//   var vars = [], hash;
+//   var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+//   for(var i = 0; i <hashes.length; i++)
+//   {
+//     hash = hashes[i].split('=');
+//     vars.push(hash[0]);
+//     vars[hash[0]] = hash[1];
+//   }
+//   return vars;
+// }
+// 
+// var uri = getUrlVars();
+// uri[0] = uri.lati;
+// uri[1] = uri.longi;
+// uri[2] = decodeURI(uri.msg);
+// console.log("msg "+uri[2]);
+
+// function send() {
+//   socket.on('connected', function() {
+//     socket.json.emit('init',uri);
+//   });
+//   socket.on('show', function(data) {
+//     show(data);
+//   });
+// };
+
+var send = new Array();
+
+function show(map_data){
+  function attachMessage(marker, msg) {
+    google.maps.event.addListener(marker, 'click', function(event) {
+      new google.maps.InfoWindow({
+        content: msg
+      }).open(marker.getMap(), marker);
+    });
+  }
+  var data = new Array();
+  console.log(map_data);
+  $(map_data).each(function(key, value){
+    data.push({position: new google.maps.LatLng(map_data[key]['lati'], map_data[key]['longi']), content: '<a id="'+key+'">'+map_data[key]['msg']+'</a>'});
+ 
+  });
+
+  var myMap = new google.maps.Map(document.getElementById('map'), {
+    zoom: 12,//地図縮尺
+    center: new google.maps.LatLng($('#lati').val(), $('#longi').val()),//地図の中心点
+    scrollwheel: false,
+    mapTypeId: google.maps.MapTypeId.ROADMAP
+  });
+ 
+  for (i = 0; i < data.length; i++) {
+    var myMarker = new google.maps.Marker({
+      position: data[i].position,
+      map: myMap
+    });
+    attachMessage(myMarker, data[i].content);
+  }
+
+}
+
+</script>
+  <form name="inform">
+    <input type="text" value="" id="lati"><br>
+    <input type="text" value="" id="longi"><br>
+    <input type="text" value="" id="msg"><br>
+    <input type="button" value="send" class="send">
+  </form>
+
+	</body>
+</html>
+
+<script>
+
+$('.send').click(function() {
+
+send[0] = $('#lati').val();
+send[1] = $('#longi').val();
+send[2] = $('#msg').val();
+console.log(send);
+//   var param = {
+//     lati  : $('#lati').val(),
+//     longi  : $('#longi').val(),
+//     msg  : $('#msg').val()
+//   };
+  socket.json.emit('init',send);
+//   socket.on('connected', function() {
+//     socket.json.emit('init',send);
+//   });
+  socket.on('show', function(data) {
+    show(data);
+  });
+
+});
+</script>
+
+<style type="text/css">
+
+.chat td{
+ width: 141px;
+ height: 141px;
+ text-align: center;
+--max-width: 136px;
+--max-height: 136px;
+ border-bottom: inset 1px black;
+ overflow: hidden;
+}
+</style>

@@ -1,0 +1,52 @@
+var socket = io.connect('/');
+var score = 0;
+function chat() {
+    socket.on('connected', function() {
+        socket.json.emit('init', { 'hello': 'hello' });
+    });
+
+    socket.on('msg', function(data) {
+      if (data[2]) {
+        update(data[2]);
+//         $.cookie("count", data[0]);  
+        console.log("guest jouken "+data[0]);
+        if($.cookie("guest") != data[0]){
+          $.cookie("count", 2);
+        } 
+      }
+    });
+    socket.on('session', function(u_data) {
+      console.log(u_data);
+//       document.cookie += u_data;
+//       $.cookie("guest", u_data[0]);
+//       $.cookie("room", u_data[1]);
+//       console.log($.cookie("guest"));
+//       console.log($.cookie("room"));
+      guest = u_data[0];
+      heya = u_data[1];
+    });
+
+}
+
+function send(ssid) {
+//     var obj = new Object();
+    var m_data = new Array();
+//     m_data[0] = $.cookie("guest");
+console.log(guest);
+    m_data[0] = guest;
+    m_data[1] = heya;
+    m_data[2] = $('#comment').val();
+    m_data[3] = $.cookie("count");
+    m_data[4] = ssid;
+    
+//     var room = $.cookie("room");
+    // ※5 メッセージを送信
+    socket.json.emit('msg', m_data);
+
+    $('#comment').val("");
+}
+function update(data) {
+    var obj = $(document.createElement('div'));
+    obj.html(data);
+    $('#view').append(obj);
+}

@@ -1,0 +1,51 @@
+// ※1 サーバに接続リクエスト
+var socket = io.connect('/');
+
+function chat(room, ssid) {
+    socket.on('connected', function() {
+        // ※3 入室する部屋番号を送信
+        socket.json.emit('init', { 'room': room, 'ssid': ssid });
+    });
+
+    // ※7 受け取ったメッセージを表示
+    socket.on('msg', function(data) {
+      if (data[2]) {
+        update(data[2]);
+//         $.cookie("count", data[0]);  
+        console.log("guest jouken "+data[0]);
+        if($.cookie("guest") != data[0]){
+          $.cookie("count", 2);
+        } 
+      }
+    });
+    socket.on('session', function(u_data) {
+      console.log(u_data);
+//       document.cookie += u_data;
+      $.cookie("guest", u_data[0]);
+      $.cookie("room", u_data[1]);
+      console.log($.cookie("guest"));
+      console.log($.cookie("room"));
+    });
+
+}
+
+function send(ssid) {
+//     var obj = new Object();
+    var m_data = new Object();
+    m_data[0] = $.cookie("guest");
+    m_data[1] = $.cookie("room");
+    m_data[2] = $('#comment').val();
+    m_data[3] = $.cookie("count");
+    m_data[4] = ssid;
+    
+//     var room = $.cookie("room");
+    // ※5 メッセージを送信
+    socket.json.emit('msg', m_data);
+
+    $('#comment').val("");
+}
+function update(data) {
+    var obj = $(document.createElement('div'));
+    obj.html(data);
+    $('#view').append(obj);
+}

@@ -1,0 +1,104 @@
+var express = require('express')
+  , https = require('https')
+  , path = require('path')
+  , io = require('socket.io')
+  , fs = require('fs')
+  , mongoose = require('mongoose')
+
+var options = {
+    key: fs.readFileSync('/etc/httpd/conf.d/private.key'), // 秘密鍵
+    cert: fs.readFileSync('/etc/httpd/conf.d/public.crt'), // 公開鍵
+};
+ 
+var app = express()
+  , server = require('https').createServer(options,app)
+  , io = io.listen(server);
+ 
+app.configure(function(){
+  app.set('port', process.env.PORT || 8887);
+  app.set('views', __dirname + '/views');
+  app.set('view engine', 'jade');
+  app.use(express.favicon());
+  app.use(express.logger('dev'));
+  app.use(express.bodyParser());
+  app.use(express.methodOverride());
+  app.use(app.router);
+  app.use(express.static(path.join(__dirname, 'public')));
+});
+ 
+app.configure('development', function(){
+  app.use(express.errorHandler());
+});
+ 
+server.listen(app.get('port'))
+var place = 0;
+var db = mongoose.connect('mongodb://localhost/map5');
+var GameSchema = new mongoose.Schema({
+     place:{type:String},
+     lati:{type:Number},
+     longi:{type:Number},
+     msg:{type:String},
+     date:{type:Number}
+});
+var Game = db.model('msg3',GameSchema);
+map = io.sockets.on('connection', function(client) {
+// ++place;
+//     console.log('just remove ');
+//     var remove_game = new Game({place:"JcYY1bW8v8wW-fgAaWs7"});
+//     remove_game.remove(function(err){
+//         if(err){ return; }
+//     });
+
+
+  client.emit('connected');
+
+  client.on('init', function(uri) {
+    console.log('session '+this.id);
+    place = this.id;
+    var u_map = {
+      "lati":uri[0],
+      "longi":uri[1],
+      "msg":uri[2],
+      "place":place,
+      "date":new Date().getDate()
+    };
+    var memo_game = new Game(u_map);
+    memo_game.save(function(err){
+      if(err){ return; }
+    });
+    var show = '{"marker":[';
+    Game.find(function(err,msg){
+      if(err){console.log(err);}
+      for (var i=0, size=msg.length; i<size; ++i) {
+        if(i!=0){show += ',';}
+        show += '["'+msg[i].lati+'","'+msg[i].longi+'","'+msg[i].msg+'","'+msg[i].place+'"]';
+      }
+      show += ']}';
+      console.log(show);
+//       show = show+'["'+uri[0]+'","'+uri[1]+'","'+uri[2]+'","'+place+'"]]}';
+      client.emit('show',show);
+      map.emit('add','["'+uri[0]+'","'+uri[1]+'","'+uri[2]+'","'+place+'"]');
+    });
+  });
+
+
+  client.on('chat', function(data) {
+    console.log('chat ' + data);
+//     console.log('room ' + data[1]);
+//     console.log('turn' + data[2]);
+//     console.log('place' + data[3]);
+
+//     ++data[2];
+    client.emit('chat',data);
+  });
+  
+  client.on('disconnect', function() {
+    Game.remove({place:this.id}, function(err) {
+      console.log('remove error '+err);
+    });
+    client.emit('del',this.id);
+    
+  });
+  
+});
+

@@ -1,0 +1,29 @@
+var chat = io.connect('http://localhost:3000/chat');
+chat.on('connect', function() {
+  chat.on('count', function(data) {
+    $('#count').text(data.count);
+  });
+  chat.on('message', function(data) {
+    // サーバからチャットテキストを受信した時の処理
+    var date = new Date(data.timestamp);
+    $('#chat').append(
+      '<div class="chatlog"><p>'
+      + escape(data.name)
+      + ': '
+      + escape(data.text)
+      + '</p><span class="date">'
+      + date.toString()
+      + '</span></div>');
+    $('#chat').scrollTop(1000000);
+  });
+});
+
+// サーバへチャットテキストを送信する処理
+function send() {
+  var name = $('#name').val();
+  var text = $('#text').val();
+  if (text && name) {
+    chat.emit('message', {name: name, text: text});
+    $('#text').val('');
+  }
+}

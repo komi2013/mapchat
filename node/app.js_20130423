@@ -1,0 +1,121 @@
+var express = require('express')
+  , https = require('https')
+  , path = require('path')
+  , io = require('socket.io')
+  , fs = require('fs')
+  , mongoose = require('mongoose')
+
+var options = {
+    key: fs.readFileSync('/etc/httpd/conf.d/private.key'), // 秘密鍵
+    cert: fs.readFileSync('/etc/httpd/conf.d/public.crt'), // 公開鍵
+};
+ 
+var app = express()
+  , server = require('https').createServer(options,app)
+  , io = io.listen(server);
+ 
+app.configure(function(){
+  app.set('port', process.env.PORT || 8887);
+  app.set('views', __dirname + '/views');
+  app.set('view engine', 'jade');
+  app.use(express.favicon());
+  app.use(express.logger('dev'));
+  app.use(express.bodyParser());
+  app.use(express.methodOverride());
+  app.use(app.router);
+  app.use(express.static(path.join(__dirname, 'public')));
+});
+ 
+app.configure('development', function(){
+  app.use(express.errorHandler());
+});
+ 
+server.listen(app.get('port'))
+var place = 0;
+var db = mongoose.connect('mongodb://localhost/map5');
+var GameSchema = new mongoose.Schema({
+     place:{type:Number},
+     lati:{type:Number},
+     longi:{type:Number},
+     msg:{type:String},
+     date:{type:Number}
+});
+
+map = io.sockets.on('connection', function(client) {
+++place;
+
+  client.emit('connected');
+
+  client.on('init', function(uri) {
+    var Game = db.model('msg5',GameSchema);
+    var u_map = {
+      "lati":uri[0],
+      "longi":uri[1],
+      "msg":uri[2],
+      "place":place,
+      "date":new Date().getDate()
+    };
+//     console.log('u_map ' + u_map);
+    var memo_game = new Game(u_map);
+    memo_game.save(function(err){
+        if(err){ return; }
+    });
+    var show = '{"marker":[';
+    Game.find(function(err,msg){
+      if(err){console.log(err);}
+      for (var i=0, size=msg.length; i<size; ++i) {
+//         console.log(msg[i].place);
+//         console.log(msg[i].longi);
+//         console.log(msg[i].msg);
+//         show += msg[i].place;
+//         show[i].lati = msg[i].lati;
+//         show[i].longi = msg[i].longi;
+//         show[i].msg = msg[i].msg;
+//         show[i].date = msg[i].date;
+        show += '["'+msg[i].lati+'","'+msg[i].longi+'","'+msg[i].msg+'","'+msg[i].place+'"],';
+//         show += '{"place":"'+msg[i].place+'","longi":"'+msg[i].longi+'","msg":"'+msg[i].msg+'"},';
+      }
+      console.log(show);
+      show = show+'["'+uri[0]+'","'+uri[1]+'","'+uri[2]+'","'+place+'"]]}';
+//       show = show+'{"place":"'+place+'","longi":"'+uri[1]+'","msg":"'+uri[2]+'"}]';
+//       console.log(show);
+//       var obj = eval("("+show+")");
+//       for (var i=0, size=obj.marker.length; i<size; ++i) {
+// 
+//         console.log(obj.marker[i][0]);
+//       }
+//       console.log(obj);
+//       console.log(msg);
+//       console.log('aida');
+//       msg = msg + {
+//         "place":place,
+//         "lati":uri[0],
+//         "longi":uri[1],
+//         "msg":uri[2],
+//         "date":new Date().getDate()};
+// //       var message = $.extend(msg, u_map);
+//       console.log(msg);
+      client.emit('show',show);
+    });
+//     client.emit('msg',u_map);
+//     client.join(place);
+//     map.to(place).emit('place', place);
+//     client.leave(place);
+  });
+
+  client.on('chat', function(data) {
+    console.log('place ' + data[0]);
+    console.log('room ' + data[1]);
+    console.log('turn' + data[2]);
+    console.log('place' + data[3]);
+
+    ++data[2];
+    marubatsu.to(data[1]).emit('msg', data);
+  });
+  
+  client.on('disconnect', function() {
+      console.log('disconnect komatsu');
+  });
+  
+});
+
